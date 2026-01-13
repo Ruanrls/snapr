@@ -1,21 +1,12 @@
 mod commands {
-    use std::collections::HashMap;
-    use std::mem::zeroed;
-    use std::ptr::null_mut;
-    use std::sync::{Arc, RwLock};
-
-    use windows_sys::Win32::Graphics::Gdi::{
-        GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow,
-    };
-    use windows_sys::Win32::UI::Input::KeyboardAndMouse::GetActiveWindow;
-
-    use crate::monitor;
     use crate::monitor::monitor::{Bounds, Monitor, MonitorHandler};
+    use serde::{Deserialize, Serialize};
+    use std::collections::HashMap;
+    use std::sync::{Arc, RwLock};
 
     const SHADOW_BORDERS_SIZE: i32 = 7;
 
-    // #[derive(PartialEq, Eq, Hash, Copy, Clone)]
-    #[derive(Debug)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub enum ScreenPositions {
         TopLeft,
         TopRight,
@@ -28,13 +19,13 @@ mod commands {
         Bottom,
     }
 
-    #[derive(Hash, PartialEq, Eq, Copy, Clone, Debug)]
+    #[derive(Hash, PartialEq, Eq, Copy, Clone, Debug, Serialize, Deserialize)]
     pub struct KeyBinding {
         pub modifiers: u8, // bitmask,
         pub key: u32,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Command {
         pub key_binding: KeyBinding,
         pub position: ScreenPositions,

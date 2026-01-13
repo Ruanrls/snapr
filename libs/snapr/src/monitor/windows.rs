@@ -1,14 +1,10 @@
-use std::{
-    mem::zeroed,
-    ptr::{null, null_mut},
-};
+use std::{mem::zeroed, ptr::null_mut};
 
 use windows_sys::Win32::{
     Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow},
     UI::WindowsAndMessaging::{
-        AW_BLEND, AW_SLIDE, AnimateWindow, GetForegroundWindow, IsZoomed, SW_SHOWNORMAL,
-        SWP_ASYNCWINDOWPOS, SWP_DRAWFRAME, SWP_FRAMECHANGED, SWP_SHOWWINDOW, SetWindowPos,
-        ShowWindow,
+        GetForegroundWindow, IsZoomed, SW_SHOWNORMAL, SWP_ASYNCWINDOWPOS, SWP_FRAMECHANGED,
+        SetWindowPos, ShowWindow,
     },
 };
 
@@ -28,12 +24,6 @@ impl MonitorHandler for Monitor {
         };
 
         let monitor_work_area = monitor_info.rcWork;
-        println!("rcWork right {}", monitor_work_area.right);
-        println!("rc right {}", monitor_info.rcMonitor.right);
-
-        println!("rcWork bottom {}", monitor_work_area.bottom);
-        println!("rc bottom {}", monitor_info.rcMonitor.bottom);
-
         Monitor {
             bounds: Bounds {
                 top: monitor_work_area.top,
@@ -45,7 +35,6 @@ impl MonitorHandler for Monitor {
     }
 
     fn set_position(&self, bounds: &Bounds) {
-        println!("Updating screen positions={:?}", bounds);
         unsafe {
             let active_window = GetForegroundWindow();
 
