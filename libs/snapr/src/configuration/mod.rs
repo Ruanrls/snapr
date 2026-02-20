@@ -1,15 +1,20 @@
-use crate::commands::{Command, KeyBinding, ScreenPositions};
+use crate::{
+    commands::{Command, CommandHash, KeyBinding, ScreenPositions},
+    configuration,
+};
 
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs::{self, write},
     io,
+    ops::Deref,
+    path::Path,
     sync::LazyLock,
 };
 
-pub static DEFAULT_COMMANDS: LazyLock<HashMap<KeyBinding, Command>> = LazyLock::new(|| {
-    let mut command_storage: HashMap<KeyBinding, Command> = HashMap::new();
+pub static DEFAULT_COMMANDS: LazyLock<CommandHash> = LazyLock::new(|| {
+    let mut command_storage: CommandHash = HashMap::new();
 
     let key = KeyBinding {
         modifiers: 4,
@@ -107,30 +112,69 @@ pub static DEFAULT_COMMANDS: LazyLock<HashMap<KeyBinding, Command>> = LazyLock::
         },
     );
 
+    let key = KeyBinding {
+        modifiers: 4,
+        key: 67,
+    };
+    command_storage.insert(
+        key,
+        Command {
+            key_binding: key,
+            position: ScreenPositions::Center,
+        },
+    );
+
+    let key = KeyBinding {
+        modifiers: 4,
+        key: 13,
+    };
+    command_storage.insert(
+        key,
+        Command {
+            key_binding: key,
+            position: ScreenPositions::Maximize,
+        },
+    );
+
     command_storage
 });
 
 #[derive(Serialize, Deserialize)]
 pub struct UserConfiguration {
-    pub commands: HashMap<KeyBinding, Command>,
+    pub commands: HashMap<String, Command>,
 }
 
-pub fn save_config(config: &UserConfiguration, path: &str) -> Result<(), io::Error> {
-    let config_json = serde_json::to_string(config)?;
-    write(path, config_json)?;
+pub fn save_config(config: UserConfiguration, path: &str) -> Result<UserConfiguration, io::Error> {
+    let config_json = serde_json::to_string(&config)?;
 
-    Ok(())
-}
+    let config_path = Path::new(path);
+    let config_path = config_path.join("config.json");
+    let config_path = config_path.deref();
 
-pub fn load_config(path: &str) -> Result<UserConfiguration, io::Error> {
-    let mut defaults = DEFAULT_COMMANDS.clone();
-    if let Ok(file_string) = fs::read_to_string(path) {
-        let commands: UserConfiguration = serde_json::from_str(file_string.as_str())?;
-        defaults.extend(commands.commands);
-
-        Ok(UserConfiguration { commands: defaults })
-    } else {
-        println!("defaults {:?}", defaults);
-        Ok(UserConfiguration { commands: defaults })
+    let parent_path = config_path.parent().unwrap();
+    if !fs::exists(parent_path).unwrap() {
+        dbg!("Creating config directory at: {}", path);
+        fs::create_dir_all(parent_path)?;
     }
+
+    dbg!("Saving config to: {}", config_path);
+    write(config_path, config_json)?;
+    dbg!("Config file saved successfully to: {}", config_path);
+
+    Ok(config)
+}
+
+pub fn load_config(path: &str) -> Option<UserConfiguration> {
+    let config_path = format!("{path}/config.json");
+    let config_path = Path::new(config_path.as_str());
+
+    if let Ok(file_string) = fs::read_to_string(config_path) {
+        let user_configuration: UserConfiguration =
+            serde_json::from_str(file_string.as_str()).unwrap();
+
+        println!("Configuration initialized successfully!");
+        return Some(user_configuration);
+    }
+
+    None
 }

@@ -1,8 +1,9 @@
-mod commands {
+pub mod commands {
     use crate::monitor::monitor::{Bounds, Monitor, MonitorHandler};
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
-    use std::sync::{Arc, RwLock};
+    use std::fmt;
+    use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
     const SHADOW_BORDERS_SIZE: i32 = 7;
 
@@ -17,15 +18,29 @@ mod commands {
         Right,
         Left,
         Bottom,
+        Maximize,
     }
 
-    #[derive(Hash, PartialEq, Eq, Copy, Clone, Debug, Serialize, Deserialize)]
+    pub type CommandHash = HashMap<KeyBinding, Command>;
+
+    #[derive(Hash, PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
     pub struct KeyBinding {
         pub modifiers: u8, // bitmask,
         pub key: u32,
     }
 
-    #[derive(Debug, Serialize, Deserialize, Clone)]
+    impl fmt::Debug for KeyBinding {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(
+                f,
+                "KeyBinding {{ modifiers: {}, key: {:?} }}",
+                self.modifiers,
+                char::from_u32(self.key).unwrap_or('?')
+            )
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct Command {
         pub key_binding: KeyBinding,
         pub position: ScreenPositions,
@@ -88,45 +103,56 @@ mod commands {
                     bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
                     left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
                 }),
+                ScreenPositions::Center => active_monitor.set_position(&Bounds {
+                    top: monitor_center.1 / 2,
+                    right: active_monitor.bounds.right - ((monitor_center.0 / 2) * 2)
+                        + SHADOW_BORDERS_SIZE,
+                    bottom: (monitor_center.0 / 2) + SHADOW_BORDERS_SIZE,
+                    left: monitor_center.0 / 2,
+                }),
+                ScreenPositions::Maximize => active_monitor.set_position(&Bounds {
+                    top: active_monitor.bounds.top,
+                    right: active_monitor.bounds.right + SHADOW_BORDERS_SIZE * 2,
+                    bottom: active_monitor.bounds.bottom + SHADOW_BORDERS_SIZE * 2,
+                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
+                }),
                 _ => (),
             }
         }
     }
 
     pub struct CommandStorage {
-        pub commands: Arc<RwLock<HashMap<KeyBinding, Command>>>,
+        pub commands: RwLock<CommandHash>,
     }
 
-    pub trait CommandHandler {
+    pub(crate) trait CommandHandler {
         fn new() -> CommandStorage;
-        fn add(&self, command: Command) -> Option<()>;
-        fn remove(self, command: Command) -> Option<()>;
+        fn add(&self, command: Command);
+        fn remove(&self, key_binding: KeyBinding) -> Option<()>;
         fn has(self, key_binding: KeyBinding) -> Option<()>;
     }
 
     impl CommandHandler for CommandStorage {
         fn new() -> CommandStorage {
             CommandStorage {
-                commands: Arc::new(RwLock::from(HashMap::new())),
+                commands: RwLock::from(HashMap::new()),
             }
         }
 
-        fn add(&self, command: Command) -> Option<()> {
-            let mut command_storage = self.commands.write().unwrap(); // TODO: avoid unwrap
+        fn add(&self, command: Command) {
+            let mut command_storage: RwLockWriteGuard<CommandHash> = self.commands.write().unwrap();
             command_storage.insert(command.key_binding, command);
-
-            Some(())
         }
 
-        fn remove(self, command: Command) -> Option<()> {
-            let mut command_storage = self.commands.write().unwrap();
-            command_storage.remove(&command.key_binding);
+        fn remove(&self, keybinding: KeyBinding) -> Option<()> {
+            let mut command_storage: RwLockWriteGuard<CommandHash> = self.commands.write().unwrap();
+            command_storage.remove(&keybinding);
 
             Some(())
         }
 
         fn has(self, key_binding: KeyBinding) -> Option<()> {
-            let command_storage = self.commands.read().unwrap();
+            let command_storage: RwLockReadGuard<CommandHash> = self.commands.read().unwrap();
             command_storage.contains_key(&key_binding);
 
             Some(())

@@ -2,7 +2,7 @@
 mod windows;
 
 pub mod monitor {
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Bounds {
         pub top: i32,
         pub right: i32,

@@ -1,24 +1,12 @@
+import { ScreenPositions } from "@/context/commands";
 import { InputData } from "../shortcut-input";
 
-export type PositionId =
-  | "half-left"
-  | "half-right"
-  | "half-top"
-  | "half-bottom"
-  | "quarter-top-left"
-  | "quarter-top-right"
-  | "quarter-bottom-left"
-  | "quarter-bottom-right"
-  | "third-left"
-  | "third-center"
-  | "third-right";
-
 export type PositionConfig = {
-  id: PositionId;
+  id: ScreenPositions;
   label: string;
-  section: "halves" | "quarters" | "thirds";
+  section: "halves" | "quarters" | "thirds" | "maximize";
 };
 
 export type ShortcutData = {
-  [key in PositionId]?: InputData;
+  [key in ScreenPositions]?: InputData;
 };

@@ -2,37 +2,20 @@ import { PositionConfig } from "./types";
 
 export const POSITION_CONFIGS: PositionConfig[] = [
   // Halves
-  { id: "half-left", label: "Left Half", section: "halves" },
-  { id: "half-right", label: "Right Half", section: "halves" },
-  { id: "half-top", label: "Top Half", section: "halves" },
-  { id: "half-bottom", label: "Bottom Half", section: "halves" },
+  { id: "Left", label: "Left Half", section: "halves" },
+  { id: "Right", label: "Right Half", section: "halves" },
+  { id: "Top", label: "Top Half", section: "halves" },
+  { id: "Bottom", label: "Bottom Half", section: "halves" },
 
   // Quarters
-  {
-    id: "quarter-top-left",
-    label: "Top-Left",
-    section: "quarters",
-  },
-  {
-    id: "quarter-top-right",
-    label: "Top-Right",
-    section: "quarters",
-  },
-  {
-    id: "quarter-bottom-left",
-    label: "Bottom-Left",
-    section: "quarters",
-  },
-  {
-    id: "quarter-bottom-right",
-    label: "Bottom-Right",
-    section: "quarters",
-  },
+  { id: "TopLeft", label: "Top-Left", section: "quarters" },
+  { id: "TopRight", label: "Top-Right", section: "quarters" },
+  { id: "BottomLeft", label: "Bottom-Left", section: "quarters" },
+  { id: "BottomRight", label: "Bottom-Right", section: "quarters" },
+  { id: "Center", label: "Center", section: "quarters" },
 
-  // Thirds
-  { id: "third-left", label: "Left Third", section: "thirds" },
-  { id: "third-center", label: "Center Third", section: "thirds" },
-  { id: "third-right", label: "Right Third", section: "thirds" },
+  // Maximize
+  { id: "Maximize", label: "Maximize", section: "maximize" },
 ];
 
 export const SECTION_META = {
@@ -50,5 +33,10 @@ export const SECTION_META = {
     title: "Thirds (Horizontal)",
     description:
       "Divide the screen into three equal vertical columns for organized workspace layouts",
+  },
+  maximize: {
+    title: "Maximize",
+    description:
+      "Maximize the active window to fill the entire screen",
   },
 } as const;

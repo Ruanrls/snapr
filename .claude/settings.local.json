@@ -3,7 +3,10 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(ls:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(cargo check:*)",
+      "WebFetch(domain:devblogs.microsoft.com)",
+      "WebFetch(domain:www.richard-banks.org)"
     ]
   }
 }

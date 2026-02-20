@@ -1,11 +1,11 @@
+import { Command, ScreenPositions } from "@/context/commands";
 import { InputData, ShortcutInput } from "./shortcut-input";
 import { VisualPreview } from "./visual-preview";
-import { PositionId } from "./lib/types";
 
 type PositionCardProps = {
-  id: PositionId;
+  id: ScreenPositions;
   label: string;
-  inputData: InputData;
+  inputData?: Command;
   onRecord: (data: InputData) => void;
 };
 
@@ -27,8 +27,8 @@ export const PositionCard = ({
 
       <div className="flex justify-center">
         <ShortcutInput
-          modifiers={inputData.modifiers}
-          actionKey={inputData.actionKey}
+          modifiers={inputData?.key_binding.modifiers ?? 0}
+          actionKey={inputData?.key_binding.key ?? 0}
           onRecord={onRecord}
         />
       </div>

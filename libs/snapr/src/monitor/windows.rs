@@ -1,10 +1,11 @@
-use std::{mem::zeroed, ptr::null_mut};
+use std::{mem::zeroed, ptr::null_mut, thread};
 
 use windows_sys::Win32::{
+    Foundation,
     Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow},
     UI::WindowsAndMessaging::{
-        GetForegroundWindow, IsZoomed, SW_SHOWNORMAL, SWP_ASYNCWINDOWPOS, SWP_FRAMECHANGED,
-        SetWindowPos, ShowWindow,
+        GetForegroundWindow, GetWindowRect, IsZoomed, SW_SHOWNORMAL, SWP_ASYNCWINDOWPOS,
+        SWP_FRAMECHANGED, SetWindowPos, ShowWindow,
     },
 };
 
@@ -35,22 +36,46 @@ impl MonitorHandler for Monitor {
     }
 
     fn set_position(&self, bounds: &Bounds) {
+        let bounds = bounds.clone();
+
         unsafe {
             let active_window = GetForegroundWindow();
 
-            if IsZoomed(active_window) == 1 {
-                ShowWindow(active_window, SW_SHOWNORMAL);
+            let mut window_rect: Foundation::RECT = zeroed();
+            GetWindowRect(active_window, &mut window_rect);
+
+            let monitor_handle = MonitorFromWindow(active_window, MONITOR_DEFAULTTONEAREST);
+            let mut monitor_info: MONITORINFO = zeroed();
+            monitor_info.cbSize = size_of::<MONITORINFO>() as u32;
+            GetMonitorInfoW(monitor_handle, &mut monitor_info);
+
+            let monitor_bounds = monitor_info.rcMonitor;
+
+            let is_fullscreen = monitor_bounds.left == window_rect.left
+                && monitor_bounds.top == window_rect.top
+                && monitor_bounds.right == window_rect.right
+                && monitor_bounds.bottom == window_rect.bottom;
+            if is_fullscreen {
+                return;
             }
 
-            SetWindowPos(
-                active_window,
-                null_mut(),
-                bounds.left,
-                bounds.top,
-                bounds.right,
-                bounds.bottom,
-                SWP_ASYNCWINDOWPOS | SWP_FRAMECHANGED,
-            );
+            let active_window = active_window as isize;
+            thread::spawn(move || {
+                let active_window = active_window as *mut std::ffi::c_void;
+                if IsZoomed(active_window) == 1 {
+                    ShowWindow(active_window, SW_SHOWNORMAL);
+                }
+
+                SetWindowPos(
+                    active_window,
+                    null_mut(),
+                    bounds.left,
+                    bounds.top,
+                    bounds.right,
+                    bounds.bottom,
+                    SWP_FRAMECHANGED,
+                );
+            });
         }
     }
 }

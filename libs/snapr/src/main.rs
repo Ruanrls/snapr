@@ -1,25 +1,15 @@
-mod commands;
-mod configuration;
-mod events;
-mod monitor;
-
 use std::sync::Arc;
 
-use crate::commands::{CommandHandler, CommandStorage};
-use crate::configuration::load_config;
-use crate::events::start_listening;
+use snapr::{InitializeCommandsConfig, commands::CommandStorage, events, initialize_commands};
 
 fn main() {
-    let command_storage = CommandStorage::new();
-    let commands_clone = Arc::clone(&command_storage.commands);
-
-    std::thread::spawn(move || {
-        if let Ok(user_configuration) = load_config("./config.json") {
-            let mut storage = command_storage.commands.write().unwrap();
-            storage.extend(user_configuration.commands);
-        }
+    let command_storage = initialize_commands(InitializeCommandsConfig {
+        path: String::from("config.json"),
     });
 
-    let event_handler = start_listening(commands_clone);
+    let commands: Arc<CommandStorage> = Arc::new(command_storage);
+    let commands_clone = commands.clone();
+
+    let event_handler = events::start_keyboard_listener(commands_clone);
     let _ = event_handler.join();
 }

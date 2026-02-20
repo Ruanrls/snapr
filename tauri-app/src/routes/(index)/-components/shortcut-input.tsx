@@ -2,10 +2,10 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import React, { KeyboardEvent, useRef, useState } from "react";
 
 enum Modifiers {
-  Control = 12,
-  Shift = 13,
-  Meta = 14,
-  Alt = 15,
+  Control = 1,
+  Shift = 1 << 1,
+  Meta = 1 << 2,
+  Alt = 1 << 3,
 }
 
 const eventKeyToModifierCode = (key: string) => {
@@ -34,25 +34,9 @@ const modifierToChar = (code: Modifiers) => {
   return mapper[code] || "";
 };
 
-const eventKeyToDisplayString = (key: string) => {
-  const mapper: Record<string, string> = {
-    ArrowUp: "↑",
-    ArrowDown: "↓",
-    ArrowLeft: "←",
-    ArrowRight: "→",
-    " ": "Space",
-    Escape: "Esc",
-    Backspace: "⌫",
-    Delete: "Del",
-    Enter: "↵",
-  };
-
-  return mapper[key] || key;
-};
-
 export type InputData = {
-  modifiers: number[];
-  actionKey: string;
+  modifiers: number;
+  actionKey: number;
 };
 
 type ShortcutInputProps = InputData & {
@@ -67,10 +51,8 @@ export const ShortcutInput = ({
 
   const [isRecording, setIsRecording] = useState(false);
 
-  const [modifiers, setModifiers] = useState<Set<number>>(
-    new Set(modifiersParam)
-  );
-  const [actionKey, setActionKey] = useState(actionKeyParam);
+  const [modifiers, setModifiers] = useState<number>(modifiersParam);
+  const [actionKey, setActionKey] = useState<number>(actionKeyParam);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     event.stopPropagation();
@@ -82,21 +64,17 @@ export const ShortcutInput = ({
 
     const modifierCode = eventKeyToModifierCode(event.code);
     if (modifierCode) {
-      setModifiers((current) => {
-        current.add(modifierCode);
-        return new Set(current);
-      });
+      setModifiers((current) => current | modifierCode);
     } else {
-      if (modifiers.size === 0) {
-        setActionKey("");
+      if (modifiers === 0) {
+        setActionKey(0);
         return;
       }
 
-      const key = eventKeyToDisplayString(event.key);
-      setActionKey(key);
+      setActionKey(event.keyCode);
       onRecord({
-        modifiers: Array.from(modifiers.values()),
-        actionKey: key,
+        modifiers,
+        actionKey: event.keyCode,
       });
       divRef.current?.blur();
     }
@@ -105,28 +83,54 @@ export const ShortcutInput = ({
   const handleKeyUp = (event: KeyboardEvent<HTMLDivElement>) => {
     const modifierCode = eventKeyToModifierCode(event.code);
     if (modifierCode) {
-      setModifiers((current) => {
-        current.delete(modifierCode);
-        return new Set(current);
-      });
+      setModifiers((current) => current & ~modifierCode);
     }
   };
 
   const handleClick = () => {
     divRef.current?.focus();
-    setModifiers(new Set());
-    setActionKey("");
+    setModifiers(0);
+    setActionKey(0);
     setIsRecording(true);
   };
 
   const handleBlur = () => {
-    setModifiers(new Set());
-    setActionKey("");
+    setModifiers(0);
+    setActionKey(0);
     setIsRecording(false);
   };
 
-  const renderKbdGroup = (modifiersParam: number[], actionKeyParam: string) => {
-    const kbdKeys = modifiersParam.sort().map((element, index) => (
+  const keyCodeToDisplayString = (keyCode: number): string => {
+    if (keyCode === 0) return "";
+
+    // Map key codes to display strings for special keys
+    const keyCodeMapper: Record<number, string> = {
+      37: "←", // ArrowLeft
+      38: "↑", // ArrowUp
+      39: "→", // ArrowRight
+      40: "↓", // ArrowDown
+      32: "Space",
+      27: "Esc",
+      8: "⌫", // Backspace
+      46: "Del",
+      13: "↵", // Enter
+    };
+
+    return keyCodeMapper[keyCode] || String.fromCharCode(keyCode);
+  };
+
+  const modifierBitmaskToArray = (bitmask: number): Modifiers[] => {
+    const result: Modifiers[] = [];
+    if (bitmask & Modifiers.Control) result.push(Modifiers.Control);
+    if (bitmask & Modifiers.Shift) result.push(Modifiers.Shift);
+    if (bitmask & Modifiers.Meta) result.push(Modifiers.Meta);
+    if (bitmask & Modifiers.Alt) result.push(Modifiers.Alt);
+    return result;
+  };
+
+  const renderKbdGroup = (modifiersBitmask: number, actionKeyParam: string) => {
+    const modifiersArray = modifierBitmaskToArray(modifiersBitmask);
+    const kbdKeys = modifiersArray.map((element, index) => (
       <React.Fragment key={element}>
         <span>{index > 0 && "+"}</span>
         <Kbd>{modifierToChar(element)}</Kbd>
@@ -138,7 +142,7 @@ export const ShortcutInput = ({
         <React.Fragment key={actionKeyParam}>
           <span>+</span>
           <Kbd>{actionKeyParam}</Kbd>
-        </React.Fragment>
+        </React.Fragment>,
       );
     }
 
@@ -155,16 +159,16 @@ export const ShortcutInput = ({
       onBlur={handleBlur}
       className="flex justify-center items-center w-52 h-7 border border-accent rounded-sm focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
     >
-      {isRecording && !modifiers.size && (
+      {isRecording && modifiers === 0 && (
         <span className="text-sm text-foreground">type to record...</span>
       )}
-      {!isRecording && !modifiers.size && !modifiersParam.length && (
+      {!isRecording && modifiers === 0 && modifiersParam === 0 && (
         <span className="text-sm text-foreground">press to record</span>
       )}
       <KbdGroup className="justify-center items-center px-0 gap-0.5">
         {isRecording
-          ? renderKbdGroup(Array.from(modifiers.values()), actionKey)
-          : renderKbdGroup(modifiersParam, actionKeyParam)}
+          ? renderKbdGroup(modifiers, keyCodeToDisplayString(actionKey))
+          : renderKbdGroup(modifiersParam, keyCodeToDisplayString(actionKeyParam))}
       </KbdGroup>
     </div>
   );

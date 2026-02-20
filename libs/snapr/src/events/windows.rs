@@ -1,10 +1,11 @@
 #[cfg(windows)]
 pub mod windows {
     use std::cell::RefCell;
-    use std::collections::HashMap;
-    use std::sync::{Arc, RwLock};
+    use std::sync::Arc;
     use std::thread;
     use std::{ptr::null_mut, thread::JoinHandle};
+
+    use crate::commands::{CommandStorage, KeyBinding};
 
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
         VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_RCONTROL, VK_RMENU, VK_RSHIFT, VK_RWIN,
@@ -17,8 +18,6 @@ pub mod windows {
             CallNextHookEx, GetMessageW, SetWindowsHookExW, UnhookWindowsHookEx, WH_KEYBOARD_LL,
         },
     };
-
-    use crate::commands::{Command, KeyBinding};
 
     fn is_modifier(key_code: u32) -> bool {
         matches!(
@@ -49,7 +48,7 @@ pub mod windows {
             modifiers: 0,
             key: 0
         });
-        static COMMANDS: RefCell<Option<Arc<RwLock<HashMap<KeyBinding, Command>>>>> = RefCell::new(None);
+        static COMMAND_STORAGE: RefCell<Option<Arc<CommandStorage>>> = RefCell::new(None);
     }
 
     unsafe extern "system" fn hook_callback(
@@ -84,11 +83,11 @@ pub mod windows {
                 return *storage;
             });
 
-            let is_command = COMMANDS.with_borrow(|commands_storage| {
-                if let Some(commands_guard) = commands_storage {
-                    if let Ok(commands_storage) = commands_guard.read() {
-                        if commands_storage.contains_key(&updated_key_binding) {
-                            let command = commands_storage.get(&updated_key_binding).unwrap();
+            let is_command = COMMAND_STORAGE.with_borrow(|commands_storage| {
+                if let Some(commands_storage) = commands_storage {
+                    if let Ok(commands) = commands_storage.commands.read() {
+                        if commands.contains_key(&updated_key_binding) {
+                            let command = commands.get(&updated_key_binding).unwrap();
                             println!("Executing command {:?}", command);
                             command.exec();
                             return true;
@@ -107,13 +106,11 @@ pub mod windows {
         }
     }
 
-    pub fn start_listening(
-        commands: Arc<RwLock<HashMap<KeyBinding, Command>>>,
-    ) -> JoinHandle<Option<()>> {
+    pub fn start_keyboard_listener(command_storage: Arc<CommandStorage>) -> JoinHandle<Option<()>> {
         thread::spawn(move || {
             unsafe {
-                COMMANDS.with(|f| {
-                    *f.borrow_mut() = Some(commands);
+                COMMAND_STORAGE.with(|f| {
+                    *f.borrow_mut() = Some(command_storage);
                 });
 
                 let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(hook_callback), null_mut(), 0);

@@ -1,7 +1,7 @@
-import { PositionId } from "./lib/types";
+import { ScreenPositions } from "@/context/commands";
 
 type VisualPreviewProps = {
-  type: PositionId;
+  type: ScreenPositions;
 };
 
 export const VisualPreview = ({ type }: VisualPreviewProps) => {
@@ -11,7 +11,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
   const renderPreview = () => {
     switch (type) {
       // Halves - Vertical splits
-      case "half-left":
+      case "Left":
         return (
           <div className="w-12 h-8 grid grid-cols-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={activeClasses} />
@@ -19,7 +19,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
           </div>
         );
 
-      case "half-right":
+      case "Right":
         return (
           <div className="w-12 h-8 grid grid-cols-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={inactiveClasses} />
@@ -28,7 +28,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
         );
 
       // Halves - Horizontal splits
-      case "half-top":
+      case "Top":
         return (
           <div className="w-12 h-8 grid grid-rows-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={activeClasses} />
@@ -36,7 +36,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
           </div>
         );
 
-      case "half-bottom":
+      case "Bottom":
         return (
           <div className="w-12 h-8 grid grid-rows-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={inactiveClasses} />
@@ -45,7 +45,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
         );
 
       // Quarters - 2x2 grid
-      case "quarter-top-left":
+      case "TopLeft":
         return (
           <div className="w-12 h-8 grid grid-cols-2 grid-rows-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={activeClasses} />
@@ -55,7 +55,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
           </div>
         );
 
-      case "quarter-top-right":
+      case "TopRight":
         return (
           <div className="w-12 h-8 grid grid-cols-2 grid-rows-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={inactiveClasses} />
@@ -65,7 +65,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
           </div>
         );
 
-      case "quarter-bottom-left":
+      case "BottomLeft":
         return (
           <div className="w-12 h-8 grid grid-cols-2 grid-rows-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={inactiveClasses} />
@@ -75,7 +75,7 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
           </div>
         );
 
-      case "quarter-bottom-right":
+      case "BottomRight":
         return (
           <div className="w-12 h-8 grid grid-cols-2 grid-rows-2 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
             <div className={inactiveClasses} />
@@ -85,31 +85,22 @@ export const VisualPreview = ({ type }: VisualPreviewProps) => {
           </div>
         );
 
-      // Thirds - Horizontal columns
-      case "third-left":
+      // Center (quarter-sized, centered on screen)
+      case "Center":
         return (
-          <div className="w-12 h-8 grid grid-cols-3 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
-            <div className={activeClasses} />
-            <div className={inactiveClasses} />
-            <div className={inactiveClasses} />
+          <div className="w-12 h-8 relative border border-border rounded-sm overflow-hidden bg-background p-0.5">
+            <div className={`${inactiveClasses} w-full h-full`} />
+            <div
+              className={`${activeClasses} absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/5 h-3/5 rounded-[1px]`}
+            />
           </div>
         );
 
-      case "third-center":
+      // Maximize (full screen)
+      case "Maximize":
         return (
-          <div className="w-12 h-8 grid grid-cols-3 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
-            <div className={inactiveClasses} />
-            <div className={activeClasses} />
-            <div className={inactiveClasses} />
-          </div>
-        );
-
-      case "third-right":
-        return (
-          <div className="w-12 h-8 grid grid-cols-3 gap-0.5 border border-border rounded-sm overflow-hidden bg-background p-0.5">
-            <div className={inactiveClasses} />
-            <div className={inactiveClasses} />
-            <div className={activeClasses} />
+          <div className="w-12 h-8 border border-border rounded-sm overflow-hidden bg-background p-0.5">
+            <div className={`${activeClasses} w-full h-full`} />
           </div>
         );
 
