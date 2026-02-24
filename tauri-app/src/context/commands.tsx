@@ -71,16 +71,20 @@ export const CommandsProvider = ({
     const command = commands.get(keyBinding);
     if (!command) return;
 
-    setCommands((prev) => {
-      const newCommands = new Map(prev);
-      newCommands.delete(keyBinding);
-      return newCommands;
-    });
+    const newCommands = new Map(commands);
+    newCommands.delete(keyBinding);
 
+    setCommands(newCommands);
     setPositionToCommand((prev) => {
       const newMap = new Map(prev);
       newMap.delete(command.position);
       return newMap;
+    });
+
+    invoke("save_config", {
+      config: {
+        commands: Object.fromEntries(newCommands.entries()),
+      },
     });
   };
 

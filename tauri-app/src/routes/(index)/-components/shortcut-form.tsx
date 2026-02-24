@@ -7,7 +7,8 @@ import { serializeShortcut } from "./lib/utils";
 import { ScreenPositions, useCommands } from "@/context/commands";
 
 export const ShortcutForm = () => {
-  const { commands, positionToCommand, insertCommand } = useCommands();
+  const { commands, positionToCommand, insertCommand, removeCommand } =
+    useCommands();
 
   const createRecordHandler = (positionId: ScreenPositions, label: string) => {
     return (data: InputData) => {
@@ -90,6 +91,16 @@ export const ShortcutForm = () => {
                     label={pos.label}
                     inputData={inputData}
                     onRecord={createRecordHandler(pos.id, pos.label)}
+                    onRemove={
+                      commandKey
+                        ? () => {
+                            removeCommand(commandKey);
+                            toast.success("Shortcut Removed", {
+                              description: `Removed shortcut from ${pos.label}`,
+                            });
+                          }
+                        : undefined
+                    }
                   />
                 );
               })}
