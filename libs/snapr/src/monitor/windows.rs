@@ -1,4 +1,4 @@
-use std::{mem::zeroed, ptr::null_mut, thread};
+use std::{mem::zeroed, ptr::null_mut};
 
 use windows_sys::Win32::{
     Foundation,
@@ -60,22 +60,20 @@ impl MonitorHandler for Monitor {
             }
 
             let active_window = active_window as isize;
-            thread::spawn(move || {
-                let active_window = active_window as *mut std::ffi::c_void;
-                if IsZoomed(active_window) == 1 {
-                    ShowWindow(active_window, SW_SHOWNORMAL);
-                }
+            let active_window = active_window as *mut std::ffi::c_void;
+            if IsZoomed(active_window) == 1 {
+                ShowWindow(active_window, SW_SHOWNORMAL);
+            }
 
-                SetWindowPos(
-                    active_window,
-                    null_mut(),
-                    bounds.left,
-                    bounds.top,
-                    bounds.right,
-                    bounds.bottom,
-                    SWP_FRAMECHANGED,
-                );
-            });
+            SetWindowPos(
+                active_window,
+                null_mut(),
+                bounds.left,
+                bounds.top,
+                bounds.right,
+                bounds.bottom,
+                SWP_FRAMECHANGED | SWP_ASYNCWINDOWPOS,
+            );
         }
     }
 }

@@ -35,7 +35,7 @@ pub fn update_keybinding(
     command_storage: &CommandStorage,
     new_command: commands::Command,
     path: &str,
-) -> Result<(), std::io::Error> {
+) -> Result<(), String> {
     let mut writable_commands = command_storage.commands.write().unwrap();
     writable_commands.insert(new_command.key_binding, new_command);
 
@@ -46,13 +46,13 @@ pub fn remove_keybinding(
     command_storage: &CommandStorage,
     keybinding: commands::KeyBinding,
     path: &str,
-) -> Result<(), std::io::Error> {
+) -> Result<(), String> {
     command_storage.remove(keybinding);
 
     save_user_config(&command_storage.commands.read().unwrap(), path)
 }
 
-pub fn save_user_config(command_storage: &CommandHash, path: &str) -> Result<(), std::io::Error> {
+pub fn save_user_config(command_storage: &CommandHash, path: &str) -> Result<(), String> {
     let user_configuration: UserConfiguration = UserConfiguration {
         commands: command_storage
             .iter()

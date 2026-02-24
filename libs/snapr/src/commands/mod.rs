@@ -21,6 +21,74 @@ pub mod commands {
         Maximize,
     }
 
+    impl ScreenPositions {
+        pub fn get_bounds(&self, monitor_bounds: &Bounds, monitor_center: (i32, i32)) -> Bounds {
+            match self {
+                ScreenPositions::Top => Bounds {
+                    top: monitor_bounds.top,
+                    right: monitor_bounds.right + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
+                    left: monitor_bounds.left - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::Right => Bounds {
+                    top: monitor_bounds.top,
+                    right: monitor_bounds.right - monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_bounds.bottom + SHADOW_BORDERS_SIZE,
+                    left: monitor_center.0 - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::Bottom => Bounds {
+                    top: monitor_center.1 - SHADOW_BORDERS_SIZE,
+                    right: monitor_bounds.right + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE * 2,
+                    left: monitor_bounds.left - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::Left => Bounds {
+                    top: monitor_bounds.top,
+                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_bounds.bottom + SHADOW_BORDERS_SIZE * 2,
+                    left: monitor_bounds.left - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::TopLeft => Bounds {
+                    top: monitor_bounds.top,
+                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
+                    left: monitor_bounds.left - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::TopRight => Bounds {
+                    top: monitor_bounds.top,
+                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
+                    left: monitor_center.0 - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::BottomRight => Bounds {
+                    top: monitor_center.1,
+                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
+                    left: monitor_center.0 - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::BottomLeft => Bounds {
+                    top: monitor_center.1,
+                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
+                    left: monitor_bounds.left - SHADOW_BORDERS_SIZE,
+                },
+                ScreenPositions::Center => Bounds {
+                    top: monitor_center.1 / 2,
+                    right: monitor_bounds.right - ((monitor_center.0 / 2) * 2)
+                        + SHADOW_BORDERS_SIZE,
+                    bottom: (monitor_center.0 / 2) + SHADOW_BORDERS_SIZE,
+                    left: monitor_center.0 / 2,
+                },
+                ScreenPositions::Maximize => Bounds {
+                    top: monitor_bounds.top,
+                    right: monitor_bounds.right + SHADOW_BORDERS_SIZE * 2,
+                    bottom: monitor_bounds.bottom + SHADOW_BORDERS_SIZE * 2,
+                    left: monitor_bounds.left - SHADOW_BORDERS_SIZE,
+                },
+            }
+        }
+    }
+
     pub type CommandHash = HashMap<KeyBinding, Command>;
 
     #[derive(Hash, PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
@@ -52,72 +120,8 @@ pub mod commands {
             let position = &self.position;
 
             let monitor_center = active_monitor.get_center();
-            println!("MONITOR CENTER {:?}", monitor_center);
-
-            match position {
-                ScreenPositions::Top => active_monitor.set_position(&Bounds {
-                    top: active_monitor.bounds.top,
-                    right: active_monitor.bounds.right + SHADOW_BORDERS_SIZE * 2,
-                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
-                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::Right => active_monitor.set_position(&Bounds {
-                    top: active_monitor.bounds.top,
-                    right: active_monitor.bounds.right - monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
-                    bottom: active_monitor.bounds.bottom + SHADOW_BORDERS_SIZE,
-                    left: monitor_center.0 - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::Bottom => active_monitor.set_position(&Bounds {
-                    top: monitor_center.1 - SHADOW_BORDERS_SIZE,
-                    right: active_monitor.bounds.right + SHADOW_BORDERS_SIZE * 2,
-                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE * 2,
-                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::Left => active_monitor.set_position(&Bounds {
-                    top: active_monitor.bounds.top,
-                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
-                    bottom: active_monitor.bounds.bottom + SHADOW_BORDERS_SIZE * 2,
-                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::TopLeft => active_monitor.set_position(&Bounds {
-                    top: active_monitor.bounds.top,
-                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
-                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
-                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::TopRight => active_monitor.set_position(&Bounds {
-                    top: active_monitor.bounds.top,
-                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
-                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
-                    left: monitor_center.0 - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::BottomRight => active_monitor.set_position(&Bounds {
-                    top: monitor_center.1,
-                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
-                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
-                    left: monitor_center.0 - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::BottomLeft => active_monitor.set_position(&Bounds {
-                    top: monitor_center.1,
-                    right: monitor_center.0 + SHADOW_BORDERS_SIZE * 2,
-                    bottom: monitor_center.1 + SHADOW_BORDERS_SIZE,
-                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
-                }),
-                ScreenPositions::Center => active_monitor.set_position(&Bounds {
-                    top: monitor_center.1 / 2,
-                    right: active_monitor.bounds.right - ((monitor_center.0 / 2) * 2)
-                        + SHADOW_BORDERS_SIZE,
-                    bottom: (monitor_center.0 / 2) + SHADOW_BORDERS_SIZE,
-                    left: monitor_center.0 / 2,
-                }),
-                ScreenPositions::Maximize => active_monitor.set_position(&Bounds {
-                    top: active_monitor.bounds.top,
-                    right: active_monitor.bounds.right + SHADOW_BORDERS_SIZE * 2,
-                    bottom: active_monitor.bounds.bottom + SHADOW_BORDERS_SIZE * 2,
-                    left: active_monitor.bounds.left - SHADOW_BORDERS_SIZE,
-                }),
-                _ => (),
-            }
+            let position_bounds = position.get_bounds(&active_monitor.bounds, monitor_center);
+            active_monitor.set_position(&position_bounds);
         }
     }
 

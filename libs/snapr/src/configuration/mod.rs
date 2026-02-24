@@ -1,7 +1,4 @@
-use crate::{
-    commands::{Command, CommandHash, KeyBinding, ScreenPositions},
-    configuration,
-};
+use crate::commands::{Command, CommandHash, KeyBinding, ScreenPositions};
 
 use serde::{Deserialize, Serialize};
 use std::{
@@ -144,21 +141,19 @@ pub struct UserConfiguration {
     pub commands: HashMap<String, Command>,
 }
 
-pub fn save_config(config: UserConfiguration, path: &str) -> Result<UserConfiguration, io::Error> {
-    let config_json = serde_json::to_string(&config)?;
+pub fn save_config(config: UserConfiguration, path: &str) -> Result<UserConfiguration, String> {
+    let config_json = serde_json::to_string(&config).map_err(|e| "Invalid configuration")?;
 
     let config_path = Path::new(path);
     let config_path = config_path.join("config.json");
     let config_path = config_path.deref();
 
-    let parent_path = config_path.parent().unwrap();
-    if !fs::exists(parent_path).unwrap() {
-        dbg!("Creating config directory at: {}", path);
-        fs::create_dir_all(parent_path)?;
+    if let Some(parent_path) = config_path.parent() {
+        fs::File::create(parent_path).map_err(|err| err.to_string())?;
     }
 
     dbg!("Saving config to: {}", config_path);
-    write(config_path, config_json)?;
+    write(config_path, config_json).map_err(|err| err.to_string())?;
     dbg!("Config file saved successfully to: {}", config_path);
 
     Ok(config)
