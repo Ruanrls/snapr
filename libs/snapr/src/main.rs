@@ -5,7 +5,8 @@ use snapr::{InitializeCommandsConfig, commands::CommandStorage, events, initiali
 fn main() {
     let command_storage = initialize_commands(InitializeCommandsConfig {
         path: String::from("config.json"),
-    });
+    })
+    .expect("Failed to initialize commands");
 
     let commands: Arc<CommandStorage> = Arc::new(command_storage);
     let commands_clone = commands.clone();

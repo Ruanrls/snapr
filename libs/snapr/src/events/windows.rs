@@ -86,8 +86,7 @@ pub mod windows {
             let is_command = COMMAND_STORAGE.with_borrow(|commands_storage| {
                 if let Some(commands_storage) = commands_storage {
                     if let Ok(commands) = commands_storage.commands.read() {
-                        if commands.contains_key(&updated_key_binding) {
-                            let command = commands.get(&updated_key_binding).unwrap();
+                        if let Some(command) = commands.get(&updated_key_binding) {
                             println!("Executing command {:?}", command);
                             command.exec();
                             return true;
@@ -95,7 +94,7 @@ pub mod windows {
                     }
                 }
 
-                return false;
+                false
             });
 
             if is_command {
@@ -126,7 +125,7 @@ pub mod windows {
 
                     if message_response < 0 {
                         UnhookWindowsHookEx(hook);
-                        panic!("Something went wrong while receiving the message");
+                        panic!("Failed to receive message in keyboard hook");
                     }
                 }
             };

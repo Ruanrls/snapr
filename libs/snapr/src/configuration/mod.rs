@@ -1,11 +1,12 @@
+pub mod error;
+pub use error::ConfigurationError;
+
 use crate::commands::{Command, CommandHash, KeyBinding, ScreenPositions};
 
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs::{self, write},
-    io,
-    ops::Deref,
     path::Path,
     sync::LazyLock,
 };
@@ -136,40 +137,36 @@ pub static DEFAULT_COMMANDS: LazyLock<CommandHash> = LazyLock::new(|| {
     command_storage
 });
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct UserConfiguration {
     pub commands: HashMap<String, Command>,
 }
 
-pub fn save_config(config: UserConfiguration, path: &str) -> Result<UserConfiguration, String> {
-    let config_json = serde_json::to_string(&config).map_err(|e| "Invalid configuration")?;
+pub fn save_config(config: UserConfiguration, path: &str) -> Result<UserConfiguration, ConfigurationError> {
+    let config_json = serde_json::to_string(&config)?;
 
-    let config_path = Path::new(path);
-    let config_path = config_path.join("config.json");
-    let config_path = config_path.deref();
+    let config_path = Path::new(path).join("config.json");
 
     if let Some(parent_path) = config_path.parent() {
-        fs::File::create(parent_path).map_err(|err| err.to_string())?;
+        fs::create_dir_all(parent_path)?;
     }
 
-    dbg!("Saving config to: {}", config_path);
-    write(config_path, config_json).map_err(|err| err.to_string())?;
-    dbg!("Config file saved successfully to: {}", config_path);
+    write(&config_path, config_json)?;
 
     Ok(config)
 }
 
-pub fn load_config(path: &str) -> Option<UserConfiguration> {
-    let config_path = format!("{path}/config.json");
-    let config_path = Path::new(config_path.as_str());
+pub fn load_config(path: &str) -> Result<UserConfiguration, ConfigurationError> {
+    let config_path = Path::new(path).join("config.json");
 
-    if let Ok(file_string) = fs::read_to_string(config_path) {
-        let user_configuration: UserConfiguration =
-            serde_json::from_str(file_string.as_str()).unwrap();
-
-        println!("Configuration initialized successfully!");
-        return Some(user_configuration);
+    if !config_path.exists() {
+        return Err(ConfigurationError::ConfigNotFound(
+            config_path.display().to_string(),
+        ));
     }
 
-    None
+    let file_string = fs::read_to_string(&config_path)?;
+    let user_configuration: UserConfiguration = serde_json::from_str(&file_string)?;
+
+    Ok(user_configuration)
 }

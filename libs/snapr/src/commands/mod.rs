@@ -3,7 +3,7 @@ pub mod commands {
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
     use std::fmt;
-    use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+    use std::sync::RwLock;
 
     const SHADOW_BORDERS_SIZE: i32 = 7;
 
@@ -132,8 +132,8 @@ pub mod commands {
     pub(crate) trait CommandHandler {
         fn new() -> CommandStorage;
         fn add(&self, command: Command);
-        fn remove(&self, key_binding: KeyBinding) -> Option<()>;
-        fn has(self, key_binding: KeyBinding) -> Option<()>;
+        fn remove(&self, key_binding: KeyBinding);
+        fn has(&self, key_binding: KeyBinding) -> bool;
     }
 
     impl CommandHandler for CommandStorage {
@@ -144,22 +144,18 @@ pub mod commands {
         }
 
         fn add(&self, command: Command) {
-            let mut command_storage: RwLockWriteGuard<CommandHash> = self.commands.write().unwrap();
-            command_storage.insert(command.key_binding, command);
+            let mut commands = self.commands.write().expect("Command storage lock poisoned");
+            commands.insert(command.key_binding, command);
         }
 
-        fn remove(&self, keybinding: KeyBinding) -> Option<()> {
-            let mut command_storage: RwLockWriteGuard<CommandHash> = self.commands.write().unwrap();
-            command_storage.remove(&keybinding);
-
-            Some(())
+        fn remove(&self, keybinding: KeyBinding) {
+            let mut commands = self.commands.write().expect("Command storage lock poisoned");
+            commands.remove(&keybinding);
         }
 
-        fn has(self, key_binding: KeyBinding) -> Option<()> {
-            let command_storage: RwLockReadGuard<CommandHash> = self.commands.read().unwrap();
-            command_storage.contains_key(&key_binding);
-
-            Some(())
+        fn has(&self, key_binding: KeyBinding) -> bool {
+            let commands = self.commands.read().expect("Command storage lock poisoned");
+            commands.contains_key(&key_binding)
         }
     }
 }

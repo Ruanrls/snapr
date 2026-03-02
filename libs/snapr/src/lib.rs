@@ -1,6 +1,6 @@
 use crate::{
     commands::{CommandHandler, CommandHash, CommandStorage},
-    configuration::{DEFAULT_COMMANDS, UserConfiguration, save_config},
+    configuration::{ConfigurationError, DEFAULT_COMMANDS, UserConfiguration, save_config},
 };
 
 pub mod commands;
@@ -12,31 +12,37 @@ pub struct InitializeCommandsConfig {
     pub path: String,
 }
 
-pub fn initialize_commands(params: InitializeCommandsConfig) -> CommandStorage {
+pub fn initialize_commands(
+    params: InitializeCommandsConfig,
+) -> Result<CommandStorage, ConfigurationError> {
     let command_storage = CommandStorage::new();
-    let load_user_config = configuration::load_config(&params.path);
 
-    // Add user configured commands
-    if let Some(user_configuration) = load_user_config {
-        user_configuration.commands.iter().for_each(|(_, command)| {
-            command_storage.add(command.clone());
-        });
-    } else {
-        // Fallback to default commands
-        DEFAULT_COMMANDS.iter().for_each(|(_, command)| {
-            command_storage.add(command.clone());
-        });
+    match configuration::load_config(&params.path) {
+        Ok(user_configuration) => {
+            for (_, command) in &user_configuration.commands {
+                command_storage.add(command.clone());
+            }
+        }
+        Err(ConfigurationError::ConfigNotFound(_)) => {
+            for (_, command) in DEFAULT_COMMANDS.iter() {
+                command_storage.add(command.clone());
+            }
+        }
+        Err(e) => return Err(e),
     }
 
-    command_storage
+    Ok(command_storage)
 }
 
 pub fn update_keybinding(
     command_storage: &CommandStorage,
     new_command: commands::Command,
     path: &str,
-) -> Result<(), String> {
-    let mut writable_commands = command_storage.commands.write().unwrap();
+) -> Result<(), ConfigurationError> {
+    let mut writable_commands = command_storage
+        .commands
+        .write()
+        .expect("Command storage lock poisoned");
     writable_commands.insert(new_command.key_binding, new_command);
 
     save_user_config(&writable_commands, path)
@@ -46,14 +52,18 @@ pub fn remove_keybinding(
     command_storage: &CommandStorage,
     keybinding: commands::KeyBinding,
     path: &str,
-) -> Result<(), String> {
+) -> Result<(), ConfigurationError> {
     command_storage.remove(keybinding);
 
-    save_user_config(&command_storage.commands.read().unwrap(), path)
+    let readable_commands = command_storage
+        .commands
+        .read()
+        .expect("Command storage lock poisoned");
+    save_user_config(&readable_commands, path)
 }
 
-pub fn save_user_config(command_storage: &CommandHash, path: &str) -> Result<(), String> {
-    let user_configuration: UserConfiguration = UserConfiguration {
+fn save_user_config(command_storage: &CommandHash, path: &str) -> Result<(), ConfigurationError> {
+    let user_configuration = UserConfiguration {
         commands: command_storage
             .iter()
             .map(|(key_binding, command)| {
