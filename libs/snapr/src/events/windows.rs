@@ -114,7 +114,7 @@ impl WindowsKeyboardListener {
     pub fn start_keyboard_listener(
         command_storage: Arc<CommandStorage>,
         sender: Sender<Events>,
-    ) -> Self {
+    ) -> WindowsKeyboardListener {
         let thread_id = Arc::new(AtomicU32::new(0));
         let thread_id_clone = thread_id.clone();
 

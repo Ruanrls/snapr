@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use snapr::InitializeCommandsConfig;
 use tauri::{
@@ -9,11 +9,12 @@ use tauri::{
 };
 
 mod commands;
-use commands::{load_config, save_config, stop_listening_keyboard};
+use commands::{load_config, save_config, start_listening_keyboard, stop_listening_keyboard};
 
 pub struct AppState {
     pub command_storage: Arc<snapr::commands::CommandStorage>,
-    pub keyboard_listener: snapr::events::KeyboardListener,
+    pub keyboard_listener: Mutex<snapr::events::KeyboardListener>,
+    pub keyboard_event_sender: std::sync::mpsc::Sender<snapr::events::Events>,
 }
 
 fn setup_tray_menu(app: &App) -> tauri::Result<()> {
@@ -87,18 +88,20 @@ pub fn run() {
             snapr::commands::listen_commands(receiver, command_arc.clone());
             let keyboard_listener = snapr::events::KeyboardListener::start_keyboard_listener(
                 command_arc.clone(),
-                sender,
+                sender.clone(),
             );
 
             app.manage(AppState {
                 command_storage: command_arc.clone(),
-                keyboard_listener,
+                keyboard_listener: Mutex::new(keyboard_listener),
+                keyboard_event_sender: sender,
             });
             Ok(())
         })
         .invoke_handler(generate_handler![
             save_config,
             load_config,
+            start_listening_keyboard,
             stop_listening_keyboard
         ])
         .on_window_event(|window, event| {
