@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use snapr::configuration::{ConfigurationError, UserConfiguration, DEFAULT_COMMANDS};
+use snapr::configuration::{ConfigurationError, UserConfiguration};
 use tauri::{command, AppHandle, Manager};
 
 use crate::AppState;
@@ -47,16 +45,7 @@ pub fn load_config(app: AppHandle) -> Result<UserConfiguration, String> {
     match snapr::configuration::load_config(path_str) {
         Ok(config) => Ok(config),
         Err(ConfigurationError::ConfigNotFound(_)) => {
-            let mut default_config = UserConfiguration {
-                commands: HashMap::new(),
-            };
-
-            DEFAULT_COMMANDS.iter().for_each(|(key_binding, command)| {
-                default_config.commands.insert(
-                    format!("{};{}", key_binding.key, key_binding.modifiers),
-                    command.clone(),
-                );
-            });
+            let default_config = UserConfiguration::default();
 
             save_config(app, default_config.clone())?;
             Ok(default_config)

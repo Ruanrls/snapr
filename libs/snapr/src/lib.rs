@@ -1,6 +1,8 @@
 use crate::{
     commands::{CommandHandler, CommandHash, CommandStorage},
-    configuration::{ConfigurationError, DEFAULT_COMMANDS, UserConfiguration, save_config},
+    configuration::{
+        ConfigurationError, UserConfiguration, defaults::DEFAULT_COMMANDS, save_config,
+    },
 };
 
 pub mod commands;
