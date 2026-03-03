@@ -2,10 +2,12 @@
 pub mod windows {
     use std::cell::RefCell;
     use std::sync::Arc;
+    use std::sync::mpsc::Sender;
     use std::thread;
     use std::{ptr::null_mut, thread::JoinHandle};
 
     use crate::commands::{CommandStorage, KeyBinding};
+    use crate::events::Events;
 
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
         VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_RCONTROL, VK_RMENU, VK_RSHIFT, VK_RWIN,
@@ -44,6 +46,7 @@ pub mod windows {
     }
 
     thread_local! {
+        static EVENT_SENDER: RefCell<Option<Sender<Events>>> = RefCell::new(None);
         static KEY_STORAGE: RefCell<KeyBinding> = RefCell::new(KeyBinding {
             modifiers: 0,
             key: 0
@@ -88,7 +91,13 @@ pub mod windows {
                     if let Ok(commands) = commands_storage.commands.read() {
                         if let Some(command) = commands.get(&updated_key_binding) {
                             println!("Executing command {:?}", command);
-                            command.exec();
+                            EVENT_SENDER.with_borrow(|sender| {
+                                if let Some(sender) = sender {
+                                    sender.send(Events::KeyboardEvent(updated_key_binding)).ok();
+                                } else {
+                                    println!("No event sender found");
+                                }
+                            });
                             return true;
                         }
                     }
@@ -105,8 +114,13 @@ pub mod windows {
         }
     }
 
-    pub fn start_keyboard_listener(command_storage: Arc<CommandStorage>) -> JoinHandle<Option<()>> {
+    pub fn start_keyboard_listener(
+        command_storage: Arc<CommandStorage>,
+        sender: Sender<Events>,
+    ) -> JoinHandle<Option<()>> {
         thread::spawn(move || {
+            EVENT_SENDER.set(Some(sender));
+
             unsafe {
                 COMMAND_STORAGE.with(|f| {
                     *f.borrow_mut() = Some(command_storage);

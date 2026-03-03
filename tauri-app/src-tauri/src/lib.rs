@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use snapr::InitializeCommandsConfig;
+use snapr::{events::Events, InitializeCommandsConfig};
 use tauri::{
     generate_handler,
     menu::MenuBuilder,
@@ -85,7 +85,9 @@ pub fn run() {
                 command_storage: command_arc.clone(),
             });
 
-            snapr::events::start_keyboard_listener(command_arc.clone());
+            let (sender, receiver) = std::sync::mpsc::channel();
+            snapr::commands::listen_commands(receiver, command_arc.clone());
+            snapr::events::start_keyboard_listener(command_arc.clone(), sender);
             Ok(())
         })
         .invoke_handler(generate_handler![save_config, load_config])
