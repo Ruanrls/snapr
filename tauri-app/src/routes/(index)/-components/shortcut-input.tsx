@@ -1,4 +1,5 @@
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { invoke } from "@tauri-apps/api/core";
 import React, { KeyboardEvent, useRef, useState } from "react";
 
 enum Modifiers {
@@ -92,12 +93,14 @@ export const ShortcutInput = ({
     setModifiers(0);
     setActionKey(0);
     setIsRecording(true);
+    invoke("stop_listening_keyboard");
   };
 
   const handleBlur = () => {
     setModifiers(0);
     setActionKey(0);
     setIsRecording(false);
+    invoke("start_listening_keyboard");
   };
 
   const keyCodeToDisplayString = (keyCode: number): string => {

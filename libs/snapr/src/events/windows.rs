@@ -107,7 +107,7 @@ unsafe extern "system" fn hook_callback(code: i32, w_param: WPARAM, l_param: LPA
 }
 
 pub struct WindowsKeyboardListener {
-    thread_id: u32,
+    thread_id: Arc<AtomicU32>,
 }
 
 impl WindowsKeyboardListener {
@@ -148,13 +148,13 @@ impl WindowsKeyboardListener {
         });
 
         Self {
-            thread_id: thread_id.load(Ordering::SeqCst),
+            thread_id,
         }
     }
 
     pub fn stop_keyboard_listener(&self) {
         unsafe {
-            PostThreadMessageW(self.thread_id, WM_QUIT, 0, 0);
+            PostThreadMessageW(self.thread_id.load(Ordering::SeqCst), WM_QUIT, 0, 0);
         };
     }
 }
