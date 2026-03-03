@@ -3,7 +3,8 @@ use std::sync::Arc;
 use snapr::{
     InitializeCommandsConfig,
     commands::{CommandStorage, commands},
-    events, initialize_commands,
+    events::{self},
+    initialize_commands,
 };
 
 fn main() {
@@ -18,6 +19,5 @@ fn main() {
     let (sender, receiver) = std::sync::mpsc::channel();
 
     commands::listen_commands(receiver, commands);
-    let event_handler = events::start_keyboard_listener(commands_clone, sender);
-    let _ = event_handler.join();
+    events::KeyboardListener::start_keyboard_listener(commands_clone, sender);
 }

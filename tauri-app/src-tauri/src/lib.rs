@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use snapr::{events::Events, InitializeCommandsConfig};
+use snapr::InitializeCommandsConfig;
 use tauri::{
     generate_handler,
     menu::MenuBuilder,
@@ -9,10 +9,11 @@ use tauri::{
 };
 
 mod commands;
-use commands::{load_config, save_config};
+use commands::{load_config, save_config, stop_listening_keyboard};
 
 pub struct AppState {
     pub command_storage: Arc<snapr::commands::CommandStorage>,
+    pub keyboard_listener: snapr::events::KeyboardListener,
 }
 
 fn setup_tray_menu(app: &App) -> tauri::Result<()> {
@@ -81,16 +82,25 @@ pub fn run() {
             }
 
             let command_arc = Arc::new(command_storage);
-            app.manage(AppState {
-                command_storage: command_arc.clone(),
-            });
 
             let (sender, receiver) = std::sync::mpsc::channel();
             snapr::commands::listen_commands(receiver, command_arc.clone());
-            snapr::events::start_keyboard_listener(command_arc.clone(), sender);
+            let keyboard_listener = snapr::events::KeyboardListener::start_keyboard_listener(
+                command_arc.clone(),
+                sender,
+            );
+
+            app.manage(AppState {
+                command_storage: command_arc.clone(),
+                keyboard_listener,
+            });
             Ok(())
         })
-        .invoke_handler(generate_handler![save_config, load_config])
+        .invoke_handler(generate_handler![
+            save_config,
+            load_config,
+            stop_listening_keyboard
+        ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let _ = window.hide();
