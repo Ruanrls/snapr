@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::{
-    commands::{CommandHandler, CommandHash, CommandStorage},
+    commands::{CommandHandler, CommandHash, CommandStorage, KeyBinding},
     configuration::{
         ConfigurationError, UserConfiguration, defaults::DEFAULT_COMMANDS, save_config,
     },
@@ -70,12 +70,7 @@ fn save_user_config(command_storage: &CommandHash, path: &Path) -> Result<(), Co
     let user_configuration = UserConfiguration {
         commands: command_storage
             .iter()
-            .map(|(key_binding, command)| {
-                (
-                    format!("{0};{1}", key_binding.key, key_binding.modifiers),
-                    command.clone(),
-                )
-            })
+            .map(|(key_binding, command)| (key_binding.to_storage_key(), command.clone()))
             .collect(),
     };
 

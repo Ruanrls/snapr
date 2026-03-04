@@ -109,6 +109,12 @@ impl fmt::Debug for KeyBinding {
     }
 }
 
+impl KeyBinding {
+    pub fn to_storage_key(&self) -> String {
+        format!("{};{}", self.key, self.modifiers)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Command {
     pub key_binding: KeyBinding,

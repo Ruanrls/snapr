@@ -22,10 +22,7 @@ impl Default for UserConfiguration {
         defaults::DEFAULT_COMMANDS
             .iter()
             .for_each(|(key_binding, command)| {
-                commands.insert(
-                    format!("{};{}", key_binding.key, key_binding.modifiers),
-                    command.clone(),
-                );
+                commands.insert(key_binding.to_storage_key(), command.clone());
             });
 
         UserConfiguration { commands }
