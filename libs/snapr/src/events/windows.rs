@@ -1,21 +1,17 @@
 use std::cell::RefCell;
-use std::ffi::c_void;
 use std::ptr::null_mut;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::thread;
 
 use crate::commands::{CommandStorage, KeyBinding};
 use crate::events::Events;
 
-use windows_sys::Win32::System::Threading::GetCurrentThreadId;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_RCONTROL, VK_RMENU, VK_RSHIFT, VK_RWIN, VK_SHIFT,
 };
-use windows_sys::Win32::UI::WindowsAndMessaging::{
-    KBDLLHOOKSTRUCT, PostThreadMessageW, WM_KEYDOWN, WM_QUIT, WM_SYSKEYDOWN,
-};
+use windows_sys::Win32::UI::WindowsAndMessaging::{KBDLLHOOKSTRUCT, WM_KEYDOWN, WM_SYSKEYDOWN};
 use windows_sys::Win32::{
     Foundation::{LPARAM, LRESULT, WPARAM},
     UI::WindowsAndMessaging::{
@@ -47,8 +43,9 @@ thread_local! {
         key: 0
     });
     static COMMAND_STORAGE: RefCell<Option<Arc<CommandStorage>>> = RefCell::new(None);
-    static HOOK_HANDLE: RefCell<Option<*mut c_void>> = RefCell::new(None);
 }
+
+static IS_LISTENER_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 unsafe extern "system" fn hook_callback(code: i32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
     unsafe {
@@ -85,7 +82,9 @@ unsafe extern "system" fn hook_callback(code: i32, w_param: WPARAM, l_param: LPA
                         println!("Executing command {:?}", command);
                         EVENT_SENDER.with_borrow(|sender| {
                             if let Some(sender) = sender {
-                                sender.send(Events::KeyboardEvent(updated_key_binding)).ok();
+                                if IS_LISTENER_ACTIVE.load(Ordering::Relaxed) {
+                                    sender.send(Events::KeyboardEvent(updated_key_binding)).ok();
+                                }
                             } else {
                                 println!("No event sender found");
                             }
@@ -106,22 +105,13 @@ unsafe extern "system" fn hook_callback(code: i32, w_param: WPARAM, l_param: LPA
     }
 }
 
-pub struct WindowsKeyboardListener {
-    thread_id: Arc<AtomicU32>,
-}
+pub struct WindowsKeyboardListener {}
 
 impl WindowsKeyboardListener {
-    pub fn start_keyboard_listener(
-        command_storage: Arc<CommandStorage>,
-        sender: Sender<Events>,
-    ) -> WindowsKeyboardListener {
-        let thread_id = Arc::new(AtomicU32::new(0));
-        let thread_id_clone = thread_id.clone();
-
+    pub fn start_keyboard_listener(command_storage: Arc<CommandStorage>, sender: Sender<Events>) {
         thread::spawn(move || {
-            thread_id_clone.store(unsafe { GetCurrentThreadId() }, Ordering::SeqCst);
-
             EVENT_SENDER.set(Some(sender));
+            IS_LISTENER_ACTIVE.store(true, Ordering::Relaxed);
 
             unsafe {
                 COMMAND_STORAGE.with(|f| {
@@ -136,6 +126,7 @@ impl WindowsKeyboardListener {
 
                     if message_response == 0 {
                         UnhookWindowsHookEx(hook);
+                        IS_LISTENER_ACTIVE.store(false, Ordering::Relaxed);
                         return Some(());
                     }
 
@@ -146,15 +137,9 @@ impl WindowsKeyboardListener {
                 }
             };
         });
-
-        Self {
-            thread_id,
-        }
     }
 
-    pub fn stop_keyboard_listener(&self) {
-        unsafe {
-            PostThreadMessageW(self.thread_id.load(Ordering::SeqCst), WM_QUIT, 0, 0);
-        };
+    pub fn stop_keyboard_listener() {
+        IS_LISTENER_ACTIVE.store(false, Ordering::Relaxed)
     }
 }
