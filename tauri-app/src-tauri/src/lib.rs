@@ -69,13 +69,8 @@ pub fn run() {
                 .app_data_dir()
                 .expect("App data directory must be available at startup");
 
-            let command_storage = snapr::initialize_commands(InitializeCommandsConfig {
-                path: path
-                    .to_str()
-                    .expect("App data path must be valid UTF-8")
-                    .to_string(),
-            })
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+            let command_storage = snapr::initialize_commands(InitializeCommandsConfig { path })
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
             if let Ok(commands) = command_storage.commands.read() {
                 print!("Initialized command storage with {:?} commands", *commands);

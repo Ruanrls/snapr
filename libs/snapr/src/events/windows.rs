@@ -72,7 +72,7 @@ unsafe extern "system" fn hook_callback(code: i32, w_param: WPARAM, l_param: LPA
                 (false, false) => storage.key = 0,
             }
 
-            return *storage;
+            *storage
         });
 
         let is_command = COMMAND_STORAGE.with_borrow(|commands_storage| {
@@ -89,6 +89,7 @@ unsafe extern "system" fn hook_callback(code: i32, w_param: WPARAM, l_param: LPA
                                 println!("No event sender found");
                             }
                         });
+
                         return true;
                     }
                 }

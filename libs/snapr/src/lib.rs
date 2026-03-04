@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use crate::{
     commands::{CommandHandler, CommandHash, CommandStorage},
     configuration::{
@@ -11,7 +13,7 @@ pub mod events;
 mod monitor;
 
 pub struct InitializeCommandsConfig {
-    pub path: String,
+    pub path: PathBuf,
 }
 
 pub fn initialize_commands(
@@ -19,14 +21,14 @@ pub fn initialize_commands(
 ) -> Result<CommandStorage, ConfigurationError> {
     let command_storage = CommandStorage::new();
 
-    match configuration::load_config(&params.path) {
+    match configuration::load_config(params.path.as_path()) {
         Ok(user_configuration) => {
-            for (_, command) in &user_configuration.commands {
+            for command in user_configuration.commands.values() {
                 command_storage.add(command.clone());
             }
         }
         Err(ConfigurationError::ConfigNotFound(_)) => {
-            for (_, command) in DEFAULT_COMMANDS.iter() {
+            for command in DEFAULT_COMMANDS.values() {
                 command_storage.add(command.clone());
             }
         }
@@ -39,7 +41,7 @@ pub fn initialize_commands(
 pub fn update_keybinding(
     command_storage: &CommandStorage,
     new_command: commands::Command,
-    path: &str,
+    path: &Path,
 ) -> Result<(), ConfigurationError> {
     let mut writable_commands = command_storage
         .commands
@@ -53,7 +55,7 @@ pub fn update_keybinding(
 pub fn remove_keybinding(
     command_storage: &CommandStorage,
     keybinding: commands::KeyBinding,
-    path: &str,
+    path: &Path,
 ) -> Result<(), ConfigurationError> {
     command_storage.remove(keybinding);
 
@@ -64,7 +66,7 @@ pub fn remove_keybinding(
     save_user_config(&readable_commands, path)
 }
 
-fn save_user_config(command_storage: &CommandHash, path: &str) -> Result<(), ConfigurationError> {
+fn save_user_config(command_storage: &CommandHash, path: &Path) -> Result<(), ConfigurationError> {
     let user_configuration = UserConfiguration {
         commands: command_storage
             .iter()

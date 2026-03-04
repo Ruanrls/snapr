@@ -9,7 +9,7 @@ use windows_sys::Win32::{
     },
 };
 
-use crate::monitor::monitor::{Bounds, Monitor, MonitorHandler};
+use crate::monitor::{Bounds, Monitor, MonitorHandler};
 
 impl MonitorHandler for Monitor {
     fn get_active_monitor() -> Monitor {

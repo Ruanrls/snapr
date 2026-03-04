@@ -8,13 +8,10 @@ pub fn save_config(app: AppHandle, config: UserConfiguration) -> Result<(), Stri
     let path = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
+        .expect("app data dir is not defined");
 
-    let path_str = path
-        .to_str()
-        .ok_or_else(|| "App data path contains invalid UTF-8".to_string())?;
-
-    let config = snapr::configuration::save_config(config, path_str).map_err(|e| e.to_string())?;
+    let config = snapr::configuration::save_config(config, path.as_path())
+        .map_err(|e| format!("Failed to save config: {e}"))?;
 
     let app_state = app.state::<AppState>();
     let mut writable_commands = app_state
@@ -24,7 +21,7 @@ pub fn save_config(app: AppHandle, config: UserConfiguration) -> Result<(), Stri
         .expect("Command storage lock poisoned");
 
     writable_commands.clear();
-    for (_, command) in &config.commands {
+    for command in config.commands.values() {
         writable_commands.insert(command.key_binding, command.clone());
     }
 
@@ -38,11 +35,7 @@ pub fn load_config(app: AppHandle) -> Result<UserConfiguration, String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {e}"))?;
 
-    let path_str = path
-        .to_str()
-        .ok_or_else(|| "App data path contains invalid UTF-8".to_string())?;
-
-    match snapr::configuration::load_config(path_str) {
+    match snapr::configuration::load_config(path.as_path()) {
         Ok(config) => Ok(config),
         Err(ConfigurationError::ConfigNotFound(_)) => {
             let default_config = UserConfiguration::default();

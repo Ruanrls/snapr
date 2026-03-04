@@ -34,12 +34,11 @@ impl Default for UserConfiguration {
 
 pub fn save_config(
     config: UserConfiguration,
-    path: &str,
+    path: &Path,
 ) -> Result<UserConfiguration, ConfigurationError> {
     let config_json = serde_json::to_string(&config)?;
 
-    let config_path = Path::new(path).join("config.json");
-
+    let config_path = path.join("config.json");
     if let Some(parent_path) = config_path.parent() {
         fs::create_dir_all(parent_path)?;
     }
@@ -49,9 +48,8 @@ pub fn save_config(
     Ok(config)
 }
 
-pub fn load_config(path: &str) -> Result<UserConfiguration, ConfigurationError> {
-    let config_path = Path::new(path).join("config.json");
-
+pub fn load_config(path: &Path) -> Result<UserConfiguration, ConfigurationError> {
+    let config_path = path.join("config.json");
     if !config_path.exists() {
         return Err(ConfigurationError::ConfigNotFound(
             config_path.display().to_string(),

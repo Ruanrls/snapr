@@ -1,19 +1,18 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use snapr::{
-    InitializeCommandsConfig,
-    commands::{CommandStorage, commands},
+    InitializeCommandsConfig, commands,
     events::{self},
     initialize_commands,
 };
 
 fn main() {
     let command_storage = initialize_commands(InitializeCommandsConfig {
-        path: String::from("config.json"),
+        path: Path::new("config.json").to_path_buf(),
     })
     .expect("Failed to initialize commands");
 
-    let commands: Arc<CommandStorage> = Arc::new(command_storage);
+    let commands: Arc<commands::CommandStorage> = Arc::new(command_storage);
     let commands_clone = commands.clone();
 
     let (sender, receiver) = std::sync::mpsc::channel();
