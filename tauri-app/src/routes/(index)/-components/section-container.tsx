@@ -1,29 +1,26 @@
-import { Separator } from "@/components/ui/separator";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type SectionContainerProps = {
-  title: string;
-  description: string;
-  children: ReactNode;
-  isLast?: boolean;
+	title: string;
+	description: string;
+	children: ReactNode;
 };
 
 export const SectionContainer = ({
-  title,
-  description,
-  children,
-  isLast = false,
+	title,
+	description,
+	children,
 }: SectionContainerProps) => {
-  return (
-    <section className="space-y-2">
-      <div className="space-y-1">
-        <h3 className="text-xl font-extrabold text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+	return (
+		<section className="space-y-4">
+			<div className="space-y-1">
+				<h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+					{title}
+				</h3>
+				<p className="text-xs text-muted-foreground/70">{description}</p>
+			</div>
 
-      {children}
-
-      {!isLast && <Separator className="mt-6" />}
-    </section>
-  );
+			<div className="rounded-xl bg-card/40">{children}</div>
+		</section>
+	);
 };

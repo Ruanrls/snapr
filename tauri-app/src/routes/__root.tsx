@@ -10,7 +10,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <React.Fragment>
-      <main className="dark w-full h-screen bg-background text-foreground overflow-x-hidden">
+      <main className="dark w-full min-h-screen bg-background text-foreground overflow-x-hidden overflow-y-auto antialiased">
         <Outlet />
         <TanStackRouterDevtools />
         <Toaster position="bottom-right" />
