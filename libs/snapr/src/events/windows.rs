@@ -3,7 +3,7 @@ use std::ptr::null_mut;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
-use std::thread;
+use std::thread::{self, JoinHandle};
 
 use crate::commands::{CommandStorage, KeyBinding};
 use crate::events::Events;
@@ -43,6 +43,7 @@ thread_local! {
         key: 0
     });
     static COMMAND_STORAGE: RefCell<Option<Arc<CommandStorage>>> = RefCell::new(None);
+    static THREAD_HANDLE: RefCell<Option<JoinHandle<Option<()>>>> = RefCell::new(None);
 }
 
 static IS_LISTENER_ACTIVE: AtomicBool = AtomicBool::new(false);
@@ -110,7 +111,13 @@ pub struct WindowsKeyboardListener {}
 
 impl WindowsKeyboardListener {
     pub fn start_keyboard_listener(command_storage: Arc<CommandStorage>, sender: Sender<Events>) {
-        thread::spawn(move || {
+        let already_running = THREAD_HANDLE.with_borrow(|h| h.is_some());
+        if already_running {
+            println!("Keyboard listener is already running");
+            return;
+        }
+
+        let thread_handle = thread::spawn(move || {
             EVENT_SENDER.set(Some(sender));
             IS_LISTENER_ACTIVE.store(true, Ordering::Relaxed);
 
@@ -138,6 +145,8 @@ impl WindowsKeyboardListener {
                 }
             };
         });
+
+        THREAD_HANDLE.set(Some(thread_handle));
     }
 
     pub fn stop_keyboard_listener() {
