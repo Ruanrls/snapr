@@ -74,6 +74,6 @@ fn save_user_config(command_storage: &CommandHash, path: &Path) -> Result<(), Co
             .collect(),
     };
 
-    save_config(user_configuration, path)?;
+    save_config(&user_configuration, path)?;
     Ok(())
 }
