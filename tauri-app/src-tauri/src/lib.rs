@@ -86,7 +86,7 @@ pub fn run() {
             );
 
             app.manage(AppState {
-                command_storage: command_arc.clone(),
+                command_storage: command_arc,
                 keyboard_event_sender: sender,
             });
             Ok(())

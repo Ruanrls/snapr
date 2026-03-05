@@ -10,7 +10,7 @@ pub fn save_config(app: AppHandle, config: UserConfiguration) -> Result<(), Stri
         .app_data_dir()
         .expect("app data dir is not defined");
 
-    let config = snapr::configuration::save_config(&config, path.as_path())
+    snapr::configuration::save_config(&config, path.as_path())
         .map_err(|e| format!("Failed to save config: {e}"))?;
 
     let app_state = app.state::<AppState>();

@@ -29,10 +29,7 @@ impl Default for UserConfiguration {
     }
 }
 
-pub fn save_config<'owner>(
-    config: &'owner UserConfiguration,
-    path: &Path,
-) -> Result<&'owner UserConfiguration, ConfigurationError> {
+pub fn save_config(config: &UserConfiguration, path: &Path) -> Result<(), ConfigurationError> {
     let config_json = serde_json::to_string(config)?;
 
     let config_path = path.join("config.json");
@@ -42,7 +39,7 @@ pub fn save_config<'owner>(
 
     write(&config_path, config_json)?;
 
-    Ok(config)
+    Ok(())
 }
 
 pub fn load_config(path: &Path) -> Result<UserConfiguration, ConfigurationError> {
